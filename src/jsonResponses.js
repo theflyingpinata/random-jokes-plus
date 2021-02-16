@@ -28,10 +28,33 @@ const getRandomJoke = () => {
   return JSON.stringify(responseObj);
 };
 
+const getRandomJokes = (limit = 1) => {
+  // "limit" cleaning
+  let limit2 = Number(limit);
+  limit2 = !limit2 ? 1 : limit2;
+  limit2 = Math.floor(limit2);
+  limit2 = limit2 > jokes.length ? jokes.length : limit2;
+  limit2 = limit2 < 1 ? 1 : limit2;
+
+  const responseObj = [];
+  for (let i = 0; i < limit2; i += 1) {
+    responseObj.push(JSON.parse(getRandomJoke()));
+  }
+  console.log(responseObj);
+  return JSON.stringify(responseObj);
+};
+
 const getRandomJokeResponse = (request, response) => {
   response.writeHead(200, { 'Content-Type': 'application/json' });
   response.write(getRandomJoke());
   response.end();
 };
 
+const getRandomJokesResponse = (request, response, params) => {
+  response.writeHead(200, { 'Content-Type': 'application/json' });
+  response.write(getRandomJokes(params.limit));
+  response.end();
+};
+
 module.exports.getRandomJokeResponse = getRandomJokeResponse;
+module.exports.getRandomJokesResponse = getRandomJokesResponse;

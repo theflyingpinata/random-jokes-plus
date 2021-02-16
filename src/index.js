@@ -3,6 +3,7 @@ console.log('First web service starting up ...');
 // 1 - pull in the HTTP server module
 const http = require('http');
 const url = require('url');
+const query = require('querystring');
 const htmlHandler = require('./htmlResponses.js');
 const jsonHandler = require('./jsonResponses.js');
 
@@ -11,11 +12,11 @@ const jsonHandler = require('./jsonResponses.js');
 // 3 - locally this will be 3000, on Heroku it will be assigned
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
-
 const urlStruct = {
   '/random-joke': jsonHandler.getRandomJokeResponse,
-  notFound: htmlHandler.get404Response
-}
+  '/random-jokes': jsonHandler.getRandomJokesResponse,
+  notFound: htmlHandler.get404Response,
+};
 
 // 7 - this is the function that will be called every time a client request comes in
 // this time we will look at the `pathname`, and send back the appropriate page
@@ -27,8 +28,10 @@ const onRequest = (request, response) => {
   // console.log("parsedUrl=", parsedUrl);
   // console.log("pathname=", pathname);
 
+  const params = query.parse(parsedUrl.query);
+
   if (urlStruct[pathname]) {
-    urlStruct[pathname](request, response);
+    urlStruct[pathname](request, response, params);
   } else {
     urlStruct.notFound(request, response);
   }
