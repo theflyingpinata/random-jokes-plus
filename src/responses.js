@@ -28,6 +28,13 @@ const getRandomJoke = () => {
   return JSON.stringify(responseObj);
 };
 
+function getJokeXML(joke) {
+  return `<joke>
+    <q>${joke.q}</q>
+    <a>${joke.a}</a>
+  </joke>`;
+}
+
 const getRandomJokes = (limit = 1) => {
   // "limit" cleaning
   let limit2 = Number(limit);
@@ -40,19 +47,40 @@ const getRandomJokes = (limit = 1) => {
   for (let i = 0; i < limit2; i += 1) {
     responseObj.push(JSON.parse(getRandomJoke()));
   }
-  console.log(responseObj);
+  // console.log(responseObj);
   return JSON.stringify(responseObj);
 };
 
-const getRandomJokeResponse = (request, response) => {
-  response.writeHead(200, { 'Content-Type': 'application/json' });
-  response.write(getRandomJoke());
+const getRandomJokeResponse = (request, response, params, acceptedTypes) => {
+  const responseJoke = getRandomJoke();
+
+  if (acceptedTypes.includes('text/xml')) { // Check for XML header
+    response.writeHead(200, { 'Content-Type': 'text/xml' });
+    response.write(getJokeXML(JSON.parse(responseJoke)));
+  } else {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.write(getRandomJoke());
+  }
   response.end();
 };
 
-const getRandomJokesResponse = (request, response, params) => {
-  response.writeHead(200, { 'Content-Type': 'application/json' });
-  response.write(getRandomJokes(params.limit));
+const getRandomJokesResponse = (request, response, params, acceptedTypes) => {
+  let responseJokes = getRandomJokes(params.limit);
+
+  if (acceptedTypes.includes('text/xml')) { // Check for XML header
+    responseJokes = JSON.parse(responseJokes);
+    let responseXML = '<jokes>';
+    for (let i = 0; i < responseJokes.length; i += 1) {
+      responseXML += getJokeXML(responseJokes[i]);
+    }
+    responseXML += '\n</jokes>';
+    console.log(responseXML);
+    response.writeHead(200, { 'Content-Type': 'text/xml' });
+    response.write(responseXML);
+  } else { // JSON response
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.write(getRandomJokes(params.limit));
+  }
   response.end();
 };
 
