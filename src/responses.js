@@ -28,6 +28,11 @@ const getRandomJoke = () => {
   return JSON.stringify(responseObj);
 };
 
+// ALWAYS GIVE CREDIT - in your code comments and documentation
+// Source: https://stackoverflow.com/questions/2219526/how-many-bytes-in-a-javascript-string/29955838
+// Refactored to an arrow function by ACJ
+const getBinarySize = (string) => Buffer.byteLength(string, 'utf8');
+
 function getJokeXML(joke) {
   return `<joke>
     <q>${joke.q}</q>
@@ -51,35 +56,54 @@ const getRandomJokes = (limit = 1) => {
   return JSON.stringify(responseObj);
 };
 
-const getRandomJokeResponse = (request, response, params, acceptedTypes) => {
+const getRandomJokeResponse = (request, response, params, acceptedTypes, httpMethod) => {
   const responseJoke = getRandomJoke();
 
+  const headers = {};
+  let content;
   if (acceptedTypes.includes('text/xml')) { // Check for XML header
-    response.writeHead(200, { 'Content-Type': 'text/xml' });
-    response.write(getJokeXML(JSON.parse(responseJoke)));
+    headers['Content-Type'] = 'text/xml';
+    content = getJokeXML(JSON.parse(responseJoke));
   } else {
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.write(getRandomJoke());
+    headers['Content-Type'] = 'text/json';
+    content = getRandomJoke();
+  }
+  console.log(httpMethod);
+  if (httpMethod === 'HEAD') {
+    headers['Content-Length'] = getBinarySize(content);
+  }
+  response.writeHead(200, headers);
+  if (httpMethod !== 'HEAD') {
+    response.write(content);
   }
   response.end();
 };
 
-const getRandomJokesResponse = (request, response, params, acceptedTypes) => {
+const getRandomJokesResponse = (request, response, params, acceptedTypes, httpMethod) => {
   let responseJokes = getRandomJokes(params.limit);
 
+  const headers = {};
+  let content;
+
   if (acceptedTypes.includes('text/xml')) { // Check for XML header
+    headers['Content-Type'] = 'text/xml';
     responseJokes = JSON.parse(responseJokes);
     let responseXML = '<jokes>';
     for (let i = 0; i < responseJokes.length; i += 1) {
       responseXML += getJokeXML(responseJokes[i]);
     }
     responseXML += '\n</jokes>';
-    console.log(responseXML);
-    response.writeHead(200, { 'Content-Type': 'text/xml' });
-    response.write(responseXML);
+    content = responseXML;
   } else { // JSON response
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.write(getRandomJokes(params.limit));
+    headers['Content-Type'] = 'text/json';
+    content = getRandomJokes(params.limit);
+  }
+  if (httpMethod === 'HEAD') {
+    headers['Content-Length'] = getBinarySize(content);
+  }
+  response.writeHead(200, headers);
+  if (httpMethod !== 'HEAD') {
+    response.write(content);
   }
   response.end();
 };
